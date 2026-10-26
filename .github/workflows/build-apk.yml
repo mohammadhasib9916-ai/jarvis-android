@@ -9,26 +9,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Get project files
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
+
+      - name: Unzip project
+        run: unzip jarvis-android-companion.zip -d project
+
+      - name: Install Gradle
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.2.1-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.2.1/bin" >> "$GITHUB_PATH"
 
       - name: Build APK
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          cd project/android-companion
+          gradle assembleDebug
 
-      - name: Save APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: jarvis-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          
+          path: project/android-companion/app/build/outputs/apk/debug/app-debug.apk
