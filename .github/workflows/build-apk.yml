@@ -17,6 +17,8 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
+            - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
       - name: Unzip project
         run: unzip jarvis-android-companion.zip -d project
