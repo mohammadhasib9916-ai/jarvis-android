@@ -17,11 +17,23 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
-            - name: Accept Android SDK licenses
+
+      - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses
 
       - name: Unzip project
-        run: unzip jarvis-android-companion.zip -d project
+        run: unzip -o jarvis-android-companion.zip -d project
+
+      - name: Find Android project
+        run: |
+          PROJECT_DIR="$(find project -name settings.gradle.kts -type f -print -quit | xargs dirname)"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "settings.gradle.kts not found inside ZIP"
+            find project -maxdepth 4 -type f | head -100
+            exit 1
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Android project found at: $PROJECT_DIR"
 
       - name: Install Gradle
         run: |
@@ -30,11 +42,10 @@ jobs:
           echo "/tmp/gradle-8.2.1/bin" >> "$GITHUB_PATH"
 
       - name: Build APK
-        run: |
-          cd project/android-companion
-          gradle assembleDebug
+        run: gradle -p "$PROJECT_DIR" assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: jarvis-debug-apk
-          path: project/android-companion/app/build/outputs/apk/debug/app-debug.apk
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
