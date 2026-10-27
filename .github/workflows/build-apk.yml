@@ -25,15 +25,17 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses || true
+        run: yes | sdkmanager --licenses || true
 
       - name: Extract Android project
         run: |
-          unzip -o jarvis-android-companion.zip -d project
+          set -e
+          mkdir -p project
+          unzip -o jarvis-android-companion-safe.zip -d project
 
       - name: Find Android project
         run: |
+          set -e
           PROJECT_DIR="$(find project -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
           if [ -z "$PROJECT_DIR" ]; then
             echo "ERROR: settings.gradle.kts not found in ZIP"
@@ -59,3 +61,4 @@ jobs:
           name: jarvis-debug-apk
           path: project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          
