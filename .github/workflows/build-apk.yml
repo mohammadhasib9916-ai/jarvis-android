@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -22,13 +22,10 @@ jobs:
           java-version: '17'
 
       - name: Setup Android SDK
-        uses:      - uses: android-actions/setup-android@v4
-      - uses: 
+        uses: android-actions/setup-android@v4
+
       - name: Accept Android SDK licenses
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
-          mkdir -p "$ANDROID_SDK_ROOT/licenses"
           yes | sdkmanager --licenses || true
 
       - name: Extract Android project
@@ -39,12 +36,12 @@ jobs:
         run: |
           PROJECT_DIR="$(find project -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
           if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android project settings.gradle.kts not found"
-            find project -maxdepth 4 -type f | head -100
+            echo "ERROR: settings.gradle.kts not found in ZIP"
+            find project -maxdepth 5 -type f | head -100
             exit 1
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Found project: $PROJECT_DIR"
+          echo "Found Android project: $PROJECT_DIR"
 
       - name: Install Gradle
         run: |
@@ -54,7 +51,6 @@ jobs:
 
       - name: Build APK
         run: |
-          sdkmanager --licenses
           gradle -p "$PROJECT_DIR" assembleDebug
 
       - name: Upload APK
