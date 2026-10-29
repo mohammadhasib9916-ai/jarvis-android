@@ -38,19 +38,22 @@ jobs:
           set -e
           PROJECT_DIR=$(find project -name settings.gradle.kts -type f -print -quit | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: settings.gradle.kts not found in ZIP"
-            find project -maxdepth 5 -type f | head -100
+            echo "ERROR: settings.gradle.kts not found"
             exit 1
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Found Android project: $PROJECT_DIR"
+          echo "Found: $PROJECT_DIR"
 
-      - name: Set JARVIS URL
+      - name: Set JARVIS URL - FORCE REPLACE ALL
         run: |
-          echo "Setting JARVIS URL..."
-          find project -name "*.kt" -exec sed -i "s|https://replace-with-your-jarvis-web-app-url/|https://jarvis-personal-assistant-6607.ai.studio|g" {} \;
-          find project -name "*.kt" -exec sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" {} \;
-          grep -r "jarvis-personal-assistant" project --include="*.kt" | head -20
+          echo "Replacing in ALL files..."
+          grep -r "replace-with-your-jarvis" project || echo "not found in grep, trying case-insensitive"
+          # Replace in any file
+          find project -type f -exec sed -i "s|https://replace-with-your-jarvis-web-app-url/|https://jarvis-personal-assistant-6607.ai.studio|g" {} \; || true
+          find project -type f -exec sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" {} \; || true
+          find project -type f -exec sed -i "s|YOUR_JARVIS_URL|https://jarvis-personal-assistant-6607.ai.studio|g" {} \; || true
+          echo "--- Check after replace ---"
+          grep -r "jarvis-personal-assistant" project | head -20
 
       - name: Install Gradle
         run: |
