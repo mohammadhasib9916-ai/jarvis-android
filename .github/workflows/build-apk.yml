@@ -18,30 +18,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      - name: Extract and Fix URL
+      - name: Extract
         run: |
           rm -rf project
           unzip -o jarvis-android-companion-safe.zip -d project
-          # Find gradle folder
-          ROOT=$(find project -name "gradlew" | head -1 | xargs dirname)
-          echo "Found root: $ROOT"
-          ls $ROOT/app/src/main -R | head -50
-          
-          # Fix the URL
-          echo "=== REPLACING URL ==="
-          find $ROOT -type f -name "*.kt" -o -name "*.java" | xargs sed -i "s|https://replace-with-your-jarvis-web-app-url|https://jarvis-personal-assistant-6607.ai.studio|g" || true
-          find $ROOT -type f -name "*.kt" -o -name "*.java" | xargs sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" || true
-          
-          echo "=== VERIFY ==="
-          grep -R "replace-with" $ROOT && echo "STILL FOUND - FAILED" || echo "REMOVED SUCCESS"
-          grep -R "jarvis-personal-assistant-6607" $ROOT && echo "NEW URL FOUND - OK"
-          
-          # Save root for next step
-          echo "PROJECT_ROOT=$ROOT" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
-          cd ${{ env.PROJECT_ROOT }}
+          GRADLEW=$(find project -name "gradlew" | head -1)
+          DIR=$(dirname "$GRADLEW")
+          echo "Building in $DIR"
+          cd "$DIR"
           chmod +x ./gradlew
           ./gradlew assembleDebug
 
@@ -49,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jarvis-debug-apk
-          path: ${{ env.PROJECT_ROOT }}/app/build/outputs/apk/debug/app-debug.apk
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
