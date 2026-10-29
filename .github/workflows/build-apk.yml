@@ -18,40 +18,35 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      - name: Clean and Extract
+      - name: Extract and Fix URL
         run: |
           rm -rf project
-          mkdir -p project
           unzip -o jarvis-android-companion-safe.zip -d project
-          # Find root folder inside project
-          ROOT=$(find project -maxdepth 2 -name "build.gradle*" | head -1 | xargs dirname)
-          if [ -z "$ROOT" ]; then ROOT=project; fi
-          echo "ROOT=$ROOT" >> $GITHUB_ENV
-          echo "Project files:"
-          ls -R $ROOT | head -100
-
-      - name: Set JARVIS URL - FORCE REPLACE
-        run: |
-          echo "Before replace - searching:"
-          grep -R "replace-with-your-jarvis" $ROOT || echo "not found with https, trying without"
-          grep -R "replace-with" $ROOT || true
+          # Find gradle folder
+          ROOT=$(find project -name "gradlew" | head -1 | xargs dirname)
+          echo "Found root: $ROOT"
+          ls $ROOT/app/src/main -R | head -50
           
-          # Replace in all text files
-          grep -RIl "replace-with-your-jarvis-web-app-url" $ROOT | xargs sed -i "s|https://replace-with-your-jarvis-web-app-url|https://jarvis-personal-assistant-6607.ai.studio|g" || true
-          grep -RIl "replace-with-your-jarvis-web-app-url" $ROOT | xargs sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" || true
+          # Fix the URL
+          echo "=== REPLACING URL ==="
+          find $ROOT -type f -name "*.kt" -o -name "*.java" | xargs sed -i "s|https://replace-with-your-jarvis-web-app-url|https://jarvis-personal-assistant-6607.ai.studio|g" || true
+          find $ROOT -type f -name "*.kt" -o -name "*.java" | xargs sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" || true
           
-          echo "After replace - searching:"
-          grep -R "replace-with-your-jarvis" $ROOT || echo "SUCCESS - no placeholder left"
-          grep -R "jarvis-personal-assistant-6607" $ROOT || echo "FAILED - new url not found"
+          echo "=== VERIFY ==="
+          grep -R "replace-with" $ROOT && echo "STILL FOUND - FAILED" || echo "REMOVED SUCCESS"
+          grep -R "jarvis-personal-assistant-6607" $ROOT && echo "NEW URL FOUND - OK"
+          
+          # Save root for next step
+          echo "PROJECT_ROOT=$ROOT" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
-          cd $ROOT
+          cd ${{ env.PROJECT_ROOT }}
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: jarvis-debug-apk
-          path: ${{ env.ROOT }}/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_ROOT }}/app/build/outputs/apk/debug/app-debug.apk
