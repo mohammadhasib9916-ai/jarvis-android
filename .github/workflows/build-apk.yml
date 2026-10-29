@@ -36,7 +36,7 @@ jobs:
       - name: Find Android project
         run: |
           set -e
-          PROJECT_DIR="$(find project -name settings.gradle.kts -type f -print -quit | xargs -r dirname)"
+          PROJECT_DIR=$(find project -name settings.gradle.kts -type f -print -quit | xargs dirname)
           if [ -z "$PROJECT_DIR" ]; then
             echo "ERROR: settings.gradle.kts not found in ZIP"
             find project -maxdepth 5 -type f | head -100
@@ -44,6 +44,13 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Found Android project: $PROJECT_DIR"
+
+      - name: Set JARVIS URL
+        run: |
+          echo "Setting JARVIS URL..."
+          find project -name "*.kt" -exec sed -i "s|https://replace-with-your-jarvis-web-app-url/|https://jarvis-personal-assistant-6607.ai.studio|g" {} \;
+          find project -name "*.kt" -exec sed -i "s|replace-with-your-jarvis-web-app-url|jarvis-personal-assistant-6607.ai.studio|g" {} \;
+          grep -r "jarvis-personal-assistant" project --include="*.kt" | head -20
 
       - name: Install Gradle
         run: |
@@ -61,4 +68,3 @@ jobs:
           name: jarvis-debug-apk
           path: project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          
